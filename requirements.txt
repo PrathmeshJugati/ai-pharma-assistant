@@ -1,2 +1,6 @@
 langchain
 langchain-groq
+sentence-transformers
+faiss-cpu
+fastapi
+uvicorn

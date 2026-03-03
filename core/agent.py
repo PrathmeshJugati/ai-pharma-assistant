@@ -8,20 +8,28 @@ from core.config import settings
 
 class PharmaAgent:
 
+    VALID_TOOLS = {"search_tool", "substitute_tool", "followup_tool"}
+
     def __init__(self):
         self.retriever = Retriever()
         self.memory = ConversationMemory()
-        self.llm = ChatGroq(model=settings.LLM_MODEL)
+        self.llm = ChatGroq(
+            model=settings.LLM_MODEL,
+            temperature=settings.LLM_TEMPERATURE
+        )
 
-
-    def choose_tool(self,query):
-
+    def choose_tool(self, query):
         messages = [
             SystemMessage(content=prompts.AGENT_SYSTEM_PROMPT),
             HumanMessage(content=query)
         ]
 
-        decision = self.llm.invoke(messages).content.strip().lower()
+        raw = self.llm.invoke(messages).content.strip().lower()
+        # Normalize: strip punctuation, take first word only
+        decision = raw.split()[0].rstrip(".,;:") if raw else "search_tool"
+        if decision not in self.VALID_TOOLS:
+            print(f"[WARN] Unexpected tool choice: '{raw}'. Defaulting to search_tool.")
+            decision = "search_tool"
 
         return decision
     

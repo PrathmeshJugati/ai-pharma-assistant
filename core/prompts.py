@@ -36,11 +36,9 @@ class Prompts:
     - If uncertain, default to search_tool.
     """
 
-
     def build_prompt_new(self, query, data, mode):
 
         if mode == "substitute":
-
             system_text = """
             You are a pharmaceutical assistant.
 
@@ -59,8 +57,23 @@ class Prompts:
             Keep the explanation concise and factual.
             """
 
-        else:  # mode == "info"
+        elif mode == "followup":
+            system_text = """
+            You are a pharmaceutical assistant helping with a follow-up question.
 
+            The user is asking about a previous set of medicines already retrieved.
+            Use ONLY the provided medicine data (previous results).
+            Do NOT invent new medicines.
+
+            Based on the user's question:
+            - If asking about cheapest/affordable: highlight the lowest price option clearly.
+            - If asking to compare: contrast the two medicines on composition, manufacturer, and price.
+            - Otherwise: answer specifically from the provided medicines context.
+
+            Be concise, direct, and factual.
+            """
+
+        else:  # mode == "general"
             system_text = """
             You are a pharmaceutical assistant.
 
@@ -73,7 +86,7 @@ class Prompts:
             - what the medicine is
             - its composition
             - manufacturer
-            - price(INR)
+            - price (INR)
             If multiple medicines appear, summarize them briefly.
             """
 

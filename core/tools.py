@@ -1,5 +1,4 @@
 from core.retrieval import Retriever
-from core.memory import ConversationMemory
 
 def substitute_tool(query: str, retriever:Retriever):
     return retriever.find_substitute(query)

@@ -214,3 +214,52 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# --- Medicine Search Project Data ---
+# Ignore large FAISS index files
+*.index
+Data/medicine_cosine_flat.index
+
+# Ignore serialized metadata and large CSVs
+Data/medicine_metadata.pkl
+Data/medicine_metadata_dual.pkl
+Data/embeds.csv
+
+# Ignore raw datasets
+Dataset/
+
+# --- Next.js ---
+.next/
+out/
+build/
+
+# Production
+.next/cache/
+
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional: Turbopack
+.turbo/
+
+# Optional: ESLint cache
+.eslintcache
