@@ -199,7 +199,7 @@ Query the pharmaceutical assistant.
 
 ## ⚙️ Configuration
 
-All tuneable parameters live in `core/config.py`:
+All tuneable parameters live in `core/config.py`: 
 
 | Parameter | Default | Description |
 |---|---|---|
