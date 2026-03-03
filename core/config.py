@@ -18,7 +18,7 @@ class Settings:
 
     TOP_K = 5
     ALPHA = 0.9
-    ANCHOR_THRESHOLD = 0.61
+    ANCHOR_THRESHOLD = 0.540
 
 
     DATA_DIR = BASE_DIR / "Data"
