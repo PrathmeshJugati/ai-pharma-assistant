@@ -225,28 +225,6 @@ All tuneable parameters live in `core/config.py`:
 
 ---
 
-## 🌐 Deployment
-
-### Frontend → Vercel
-
-1. Push to GitHub.
-2. Import the repo into [Vercel](https://vercel.com).
-3. Set **Root Directory** to `frontend`.
-4. Add environment variable: `NEXT_PUBLIC_API_URL=https://your-backend.onrender.com`
-
-### Backend → Render / Railway / Fly.io
-
-> **Note:** The backend **cannot** be deployed to Vercel due to large ML model dependencies (FAISS, sentence-transformers).
-
-**Recommended: [Render](https://render.com)**
-- Build command: `pip install -r requirements.txt`
-- Start command: `fastapi run app/main.py --host 0.0.0.0 --port 8080`
-- Add env variable: `GROQ_API_KEY=...`
-
-After deploying, update `allow_origins` in `app/main.py` with your Vercel URL.
-
----
-
 ## 🛠️ Tech Stack
 
 **Backend**
