@@ -208,7 +208,7 @@ All tuneable parameters live in `core/config.py`:
 | `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | SentenceTransformer model |
 | `TOP_K` | `5` | Number of retrieval results |
 | `ALPHA` | `0.9` | Brand vs composition weight (hybrid search) |
-| `ANCHOR_THRESHOLD` | `0.61` | Minimum similarity for substitute anchor |
+| `ANCHOR_THRESHOLD` | `0.54` | Minimum similarity for substitute anchor |
 
 ---
 
