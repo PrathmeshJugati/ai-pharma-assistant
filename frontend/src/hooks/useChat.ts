@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Message } from "@/types/chat";
-import { sendMessage } from "@/lib/api";
+import { sendMessageStream } from "@/lib/api";
 
 export function useChat() {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -31,13 +31,38 @@ export function useChat() {
             addMessage("user", trimmed);
             setIsLoading(true);
 
+            const assistantMsgId = uuidv4();
+            const initialAssistantMsg: Message = {
+                id: assistantMsgId,
+                role: "assistant",
+                content: "",
+                timestamp: new Date(),
+            };
+
+            setMessages((prev) => [...prev, initialAssistantMsg]);
+
             try {
-                const data = await sendMessage(trimmed, sessionId);
-                addMessage("assistant", data.response);
+                let fullContent = "";
+                for await (const chunk of sendMessageStream(trimmed, sessionId)) {
+                    fullContent += chunk;
+                    setMessages((prev) =>
+                        prev.map((msg) =>
+                            msg.id === assistantMsgId
+                                ? { ...msg, content: fullContent }
+                                : msg
+                        )
+                    );
+                }
             } catch (err) {
                 const msg = err instanceof Error ? err.message : "Something went wrong.";
                 setError(msg);
-                addMessage("assistant", `⚠️ ${msg}`);
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === assistantMsgId
+                            ? { ...m, content: `⚠️ ${msg}` }
+                            : m
+                    )
+                );
             } finally {
                 setIsLoading(false);
             }

@@ -38,56 +38,53 @@ class Prompts:
 
     def build_prompt_new(self, query, data, mode):
 
+        DISCLAIMER = "\n\nAlways append a brief medical disclaimer: '⚠️ Disclaimer: Consult a registered healthcare professional before substituting or altering prescribed medication.'"
+
         if mode == "substitute":
-            system_text = """
-            You are a pharmaceutical assistant.
+            system_text = f"""
+            You are an expert, domain-grounded pharmaceutical assistant.
 
             Use ONLY the provided medicine data.
             Do NOT invent medicines or medical claims.
-            Use only the given data as your pharmaceutical source.
 
-            The medicines listed are substitutes or alternatives
-            based on similar composition.
+            The medicines listed are composition-matched substitutes or alternatives.
 
             Explain clearly:
-            - which medicines are equivalent substitutes
-            - important composition similarities
-            - price differences
-            - which options may be cheaper
-            Keep the explanation concise and factual.
+            - Equivalent substitute options matching active ingredients
+            - Key composition similarities
+            - Price differences (highlighting lower-cost alternatives in INR)
+            - Mention side effects or drug interactions if available in data
+            Keep the response structured, clear, and concise.{DISCLAIMER}
             """
 
         elif mode == "followup":
-            system_text = """
-            You are a pharmaceutical assistant helping with a follow-up question.
+            system_text = f"""
+            You are a pharmaceutical assistant helping with a follow-up query.
 
-            The user is asking about a previous set of medicines already retrieved.
-            Use ONLY the provided medicine data (previous results).
-            Do NOT invent new medicines.
+            The user is asking about previously retrieved medicines.
+            Use ONLY the provided medicine data (previous results). Do NOT invent new medicines.
 
             Based on the user's question:
-            - If asking about cheapest/affordable: highlight the lowest price option clearly.
-            - If asking to compare: contrast the two medicines on composition, manufacturer, and price.
-            - Otherwise: answer specifically from the provided medicines context.
+            - If asking about cheapest/affordable: highlight the lowest price option clearly with savings.
+            - If asking to compare: contrast medicines on composition, manufacturer, price, and side effects.
+            - Otherwise: answer directly from the provided medicine context.
 
-            Be concise, direct, and factual.
+            Be concise, direct, and factual.{DISCLAIMER}
             """
 
         else:  # mode == "general"
-            system_text = """
+            system_text = f"""
             You are a pharmaceutical assistant.
 
-            Use ONLY the provided medicine data.
-            Do NOT invent medicines.
-
-            The user wants information about a medicine.
+            Use ONLY the provided medicine data. Do NOT invent medicines.
 
             Explain clearly:
-            - what the medicine is
-            - its composition
-            - manufacturer
-            - price (INR)
-            If multiple medicines appear, summarize them briefly.
+            - Name and primary composition
+            - Description / Indications (what the medicine is used for, how it works)
+            - Manufacturer name
+            - Price (INR)
+            - Side effects & drug interactions if available in context
+            If multiple medicines appear, summarize them cleanly.{DISCLAIMER}
             """
 
         return [

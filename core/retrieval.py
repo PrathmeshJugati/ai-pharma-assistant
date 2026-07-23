@@ -12,19 +12,36 @@ class Retriever:
 
     def __init__(self, encoder=settings.EMBEDDING_MODEL):
         self.model = SentenceTransformer(encoder)
-        self.brand_index = faiss.read_index(str(settings.BRAND_INDEX_PATH))
-        self.composition_index = faiss.read_index(str(settings.COMPOSITION_INDEX_PATH))
+
+        # Use HNSW graph index if available for hyper-fast search, otherwise fallback to FlatIP
+        if getattr(settings, "USE_HNSW_IF_AVAILABLE", True) and os.path.exists(settings.HNSW_BRAND_INDEX_PATH) and os.path.exists(settings.HNSW_COMPOSITION_INDEX_PATH):
+            print(f"[Retriever] Loading HNSW indices from Data...")
+            self.brand_index = faiss.read_index(str(settings.HNSW_BRAND_INDEX_PATH))
+            self.composition_index = faiss.read_index(str(settings.HNSW_COMPOSITION_INDEX_PATH))
+        else:
+            print(f"[Retriever] Loading FlatIP indices from Data...")
+            self.brand_index = faiss.read_index(str(settings.BRAND_INDEX_PATH))
+            self.composition_index = faiss.read_index(str(settings.COMPOSITION_INDEX_PATH))
+
         self.dt = pd.read_pickle(settings.METADATA_PATH)
 
     def format_medicine_results(self, df_slice):
         results = []
         for _, row in df_slice.iterrows():
-            results.append({
+            item = {
                 "name": row["name"],
                 "composition": row["composition"],
                 "manufacturer": row["manufacturer_name"],
                 "price": float(row["price"])
-            })
+            }
+            if "medicine_desc" in row and pd.notna(row["medicine_desc"]):
+                item["description"] = str(row["medicine_desc"])
+            if "side_effects" in row and pd.notna(row["side_effects"]):
+                item["side_effects"] = str(row["side_effects"])
+            if "drug_interactions" in row and pd.notna(row["drug_interactions"]):
+                item["drug_interactions"] = str(row["drug_interactions"])
+            results.append(item)
+
         return {
             "type": "medicine_list",
             "results": results
@@ -73,7 +90,7 @@ class Retriever:
         final_indices = [idx for idx, _ in ranked[:top_k]]
 
         df_slice = self.dt.iloc[final_indices][
-            ["name", "composition", "manufacturer_name", "price"]
+            ["name", "composition", "manufacturer_name", "price", "medicine_desc", "side_effects", "drug_interactions"]
         ]
         return self.format_medicine_results(df_slice)
 
@@ -110,7 +127,7 @@ class Retriever:
         final_indices = [idx for idx, _ in ranked[:top_k]]
 
         df_slice = self.dt.iloc[final_indices][
-            ["name", "composition", "manufacturer_name", "price"]
+            ["name", "composition", "manufacturer_name", "price", "medicine_desc", "side_effects", "drug_interactions"]
         ]
         return self.format_medicine_results(df_slice)
 
@@ -118,21 +135,39 @@ class Retriever:
         """
         Handle follow-up queries using the results already in session memory.
         Supports: cheapest, comparison, and general context re-surfacing.
+        If user asks about substitutes, cheaper versions, or saving money, and we
+        only have general query results, dynamically fetch substitutes for the first result.
         """
-        results = memory_state["last_results"]
+        results = memory_state.get("last_results")
 
         if not results:
             return None
 
         q = query.lower()
 
+        # Check if the user is asking about substitutes, alternatives, switching, or saving
+        is_substitute_intent = any(kw in q for kw in {"substitute", "alternative", "switch", "save", "replace", "cheaper alternative"})
+
+        # If they ask about substitutes or savings, but the results list in memory is a singleton or general search result:
+        if is_substitute_intent and len(results) >= 1:
+            anchor_med = results[0]
+            print(f"[Followup Fallback] Finding substitutes dynamically for anchor: {anchor_med['name']}")
+            subs = self.find_substitute(anchor_med["name"])
+            if subs and subs.get("results"):
+                # We prepend the anchor medicine to the substitutes list so the LLM can compare them directly
+                results = [anchor_med] + subs["results"]
+
         # Check for cheapest-related intent
         if any(kw in q for kw in self._CHEAP_KW):
             cheapest = min(results, key=lambda x: x["price"])
+            anchor = results[0]
+            savings = anchor["price"] - cheapest["price"] if len(results) > 1 else 0.0
             return {
                 "followup_type": "followup",
                 "action": "cheapest",
                 "result": cheapest,
+                "anchor": anchor,
+                "savings": max(0.0, savings),
                 "results": results
             }
 

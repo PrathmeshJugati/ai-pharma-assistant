@@ -1,4 +1,6 @@
+import sys
 import logging
+sys.stdout.reconfigure(encoding='utf-8')
 logging.basicConfig(level=logging.ERROR)
 from app.main import agent
 

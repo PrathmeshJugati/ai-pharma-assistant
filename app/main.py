@@ -69,8 +69,10 @@ def health_check():
     }
 
 
+from fastapi.responses import StreamingResponse
+
 # ----------------------------
-# Main Query Endpoint
+# Main Query Endpoint (Synchronous)
 # ----------------------------
 
 @app.post("/ask", response_model=QueryResponse)
@@ -86,6 +88,29 @@ def ask(request: QueryRequest):
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
 
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )
+
+
+# ----------------------------
+# Streaming Query Endpoint (Server-Sent Events)
+# ----------------------------
+
+@app.post("/ask/stream")
+async def ask_stream(request: QueryRequest):
+    try:
+        logger.info(f"Received streaming query: {request.query} on session: {request.session_id}")
+
+        async def event_generator():
+            async for token in agent.pharma_assistant_stream(request.query, request.session_id):
+                yield token
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+    except Exception as e:
+        logger.error(f"Error in streaming endpoint: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail="Internal Server Error"
